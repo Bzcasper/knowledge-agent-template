@@ -147,9 +147,9 @@ function copyKey(key: string) {
               <USkeleton class="h-8 w-16 rounded-md" />
             </div>
           </div>
-          <template v-else-if="keys?.data?.length">
+          <template v-else-if="keys?.data?.apiKeys?.length">
             <div
-              v-for="key in keys.data"
+              v-for="key in keys.data.apiKeys"
               :key="key.id"
               class="flex items-center justify-between gap-4 px-4 py-3"
             >

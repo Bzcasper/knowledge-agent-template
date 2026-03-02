@@ -1,4 +1,5 @@
-import { admin, apiKey } from 'better-auth/plugins'
+import { admin } from 'better-auth/plugins'
+import { apiKey } from '@better-auth/api-key'
 import { schema } from '@nuxthub/db'
 import { count, eq } from 'drizzle-orm'
 import { defineServerAuth } from '@onmax/nuxt-better-auth/config'
