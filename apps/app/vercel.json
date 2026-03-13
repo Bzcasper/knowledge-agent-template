@@ -1,5 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
+  "outputDirectory": ".vercel/output/static",
   "crons": [
     {
       "path": "/api/discord/gateway",
