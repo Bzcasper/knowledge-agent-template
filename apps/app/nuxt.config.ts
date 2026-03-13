@@ -8,7 +8,7 @@ export default defineNuxtConfig({
     '@nuxthub/core',
     '@onmax/nuxt-better-auth',
     'workflow/nuxt',
-    '@evlog/nuxthub',
+    // '@evlog/nuxthub', // Disabled for Vercel deployment
     'nuxt-charts',
   ],
 
