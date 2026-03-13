@@ -141,10 +141,11 @@ export default defineNuxtConfig({
     },
     public: {
       github: {
-        appName: '',
+        appName: process.env.NUXT_PUBLIC_GITHUB_APP_NAME || 'your-agent-name',
         botTrigger: '',
       },
       discordBotUrl: '',
+      customModels: [], // Will be populated by server middleware
     },
   }
 })

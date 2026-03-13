@@ -90,24 +90,14 @@ function onGitHub() {
     <div class="w-full lg:w-1/2 flex items-center justify-center p-8 relative">
       <div class="absolute top-4 right-4 flex items-center gap-1">
         <UButton
-          :to="appConfig.app.deployUrl"
-          target="_blank"
-          icon="i-simple-icons-vercel"
-          label="Deploy on Vercel"
-          color="neutral"
-          variant="ghost"
-          size="sm"
-        />
-        <UButton
           :to="appConfig.app.repoUrl"
           target="_blank"
           icon="i-simple-icons-github"
+          label="GitHub"
           color="neutral"
           variant="ghost"
           size="sm"
-          square
         />
-        <UColorModeButton size="sm" />
       </div>
 
       <div class="w-full max-w-sm">

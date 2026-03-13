@@ -5,13 +5,14 @@ import { kv } from '@nuxthub/kv'
 import { and, eq } from 'drizzle-orm'
 import { createSavoir } from '@savoir/sdk'
 import { log, useLogger } from 'evlog'
-import { createSourceAgent, createAdminAgent } from '@savoir/agent'
+import { createDomainAgent, createAdminAgent } from '@savoir/agent'
 import type { RoutingResult } from '@savoir/agent'
 import { generateTitle } from '../../utils/chat/generate-title'
 import { getAgentConfig } from '../../utils/agent-config'
 import { KV_KEYS } from '../../utils/sandbox/types'
 import { adminTools } from '../../utils/chat/admin-tools'
 import { checkRateLimit, incrementRateLimit } from '../../utils/rate-limit'
+import { routeToExpert, getExpertPrompt, getDomainMetadata, buildDomainSystemPrompt } from '../../utils/chat/domain-router'
 
 defineRouteMeta({
   openAPI: {
@@ -91,6 +92,7 @@ export default defineEventHandler(async (event) => {
     const stepDurations: number[] = []
     let routingResult: RoutingResult | undefined
     let effectiveModel = model
+    let expertDomain: string | undefined
 
     const existingSessionId = await kv.get<string>(KV_KEYS.ACTIVE_SANDBOX_SESSION)
     if (existingSessionId) {
@@ -153,16 +155,19 @@ export default defineEventHandler(async (event) => {
         onStepFinish,
         onFinish,
       })
-      : createSourceAgent({
+      : createDomainAgent({
         tools: savoir.tools,
         getAgentConfig,
         messages,
         defaultModel: model,
         requestId,
-        onRouted: ({ routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }) => {
+        onRouted: ({ routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps, domain }) => {
           effectiveModel = routedModel
+          expertDomain = domain
           routingResult = { routerConfig, agentConfig, effectiveModel: routedModel, effectiveMaxSteps }
-          log.info('chat', `[${requestId}] Starting agent [${chat.mode}] with ${effectiveModel} (routed: ${routerConfig.complexity}, ${effectiveMaxSteps} steps, multiplier: ${agentConfig.maxStepsMultiplier}x)`)
+          
+          const domainMetadata = getDomainMetadata(domain)
+          log.info('chat', `[${requestId}] Domain routed to: ${domainMetadata.label}, Model: ${effectiveModel}`)
         },
         onStepFinish,
         onFinish,
@@ -188,6 +193,12 @@ export default defineEventHandler(async (event) => {
 
     const stream = createUIMessageStream({
       execute: async ({ writer }) => {
+        // Send domain information to UI
+        if (expertDomain) {
+          const domainMetadata = getDomainMetadata(expertDomain)
+          writer.write({ type: 'data-domain', data: { domain: expertDomain, ...domainMetadata }, transient: true })
+        }
+        
         const result = await agent.stream({
           messages: await convertToModelMessages(messages),
           options: {},
@@ -214,6 +225,8 @@ export default defineEventHandler(async (event) => {
             inputTokens: totalInputTokens,
             outputTokens: totalOutputTokens,
             durationMs: totalDurationMs,
+            // Store domain metadata in message metadata if available
+            metadata: expertDomain ? { domain: expertDomain, ...getDomainMetadata(expertDomain) } : undefined,
           }),
         })))
         const dbDurationMs = Date.now() - dbStartTime

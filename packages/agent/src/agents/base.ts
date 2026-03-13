@@ -1,12 +1,17 @@
 import { stepCountIs, ToolLoopAgent, type StepResult, type ToolSet } from 'ai'
 import { log } from 'evlog'
-import { DEFAULT_MODEL, getModelFallbackOptions } from '../router/schema'
+import { DEFAULT_MODEL, getModelFallbackOptions, CUSTOM_MODELS } from '../router/schema'
 import { compactContext } from '../core/context'
 import { callOptionsSchema } from '../core/schemas'
 import { sanitizeToolCallInputs } from '../core/sanitize'
 import { countConsecutiveToolSteps, shouldForceTextOnlyStep } from '../core/policy'
 import { webSearchTool } from '../tools/web-search'
 import type { AgentCallOptions, AgentExecutionContext, CreateAgentOptions } from '../types'
+
+// Helper function to determine if a model is a custom model
+function isCustomModel(model: string): boolean {
+  return model.startsWith('custom/') || CUSTOM_MODELS.includes(model)
+}
 
 export function createAgent({
   tools,
@@ -50,9 +55,21 @@ export function createAgent({
         customContext,
       }
 
+      // For custom models, we need to import the provider dynamically
+      let model: any = effectiveModel
+      if (isCustomModel(effectiveModel)) {
+        try {
+          // Dynamic import to avoid circular dependencies
+          const { getModel } = await import('../core/custom-models')
+          model = getModel(effectiveModel)
+        } catch (error) {
+          log.warn('agent', `Failed to load custom model ${effectiveModel}, using gateway fallback`)
+        }
+      }
+
       return {
         ...settings,
-        model: effectiveModel,
+        model,
         instructions: buildPrompt(routerConfig, agentConfig),
         tools: { ...tools, web_search: webSearchTool },
         stopWhen: stepCountIs(effectiveMaxSteps),

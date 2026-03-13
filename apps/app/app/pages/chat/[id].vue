@@ -21,6 +21,7 @@ const { showError } = useErrorToast()
 const clipboard = useClipboard()
 const { model } = useModels()
 const { setMode } = useChatMode()
+const domain = ref<string | undefined>()
 
 function getFileName(url: string): string {
   try {
@@ -77,6 +78,9 @@ const chat = new Chat({
   onData: (dataPart) => {
     if (dataPart.type === 'data-chat-title') {
       refreshNuxtData('chats')
+    }
+    if (dataPart.type === 'data-domain' && dataPart.data) {
+      domain.value = dataPart.data.domain
     }
   },
   onError(error) {
@@ -359,6 +363,7 @@ watch(() => chat.status, (newStatus, oldStatus) => {
 
           <template #actions="{ message }">
             <template v-if="message.role === 'assistant' && chat.status !== 'streaming'">
+              <DomainBadge v-if="domain" :domain="domain" />
               <UButton
                 v-for="action in getAssistantActions(message)"
                 :key="action.label"

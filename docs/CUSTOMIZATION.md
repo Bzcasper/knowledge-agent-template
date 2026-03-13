@@ -156,6 +156,8 @@ See the [Nuxt UI documentation](https://ui.nuxt.com) for all theming options. Fo
 
 ## 7. Deploy
 
+See [PRODUCTION.md](./PRODUCTION.md) for detailed deployment instructions.
+
 This project is designed to be deployed on [Vercel](https://vercel.com):
 
 1. Connect your repository to Vercel
